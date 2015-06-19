@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport"
+	content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+<title></title>
+<link href="lib/ionic/css/ionic.css" rel="stylesheet">
+<link href="css/style.css" rel="stylesheet">
+<script src="lib/ionic/js/ionic.bundle.js"></script>
+<script src="cordova.js"></script>
+<script src="js/app.js"></script>
+</head>
+<body ng-app="starter">
+	<ion-pane ng-controller="FeedController" ng-init="allFeeds()">
+	<ion-header-bar class="bar bar-header bar-calm">
+<!-- 	<div> -->
+<!-- 		<button class="button" ng-click="all()">All</button> -->
+<!-- 		<button class="button" ng-click="google()">Google</button> -->
+<!-- 		<button class="button" ng-click="yahoo()">Yahoo</button> -->
+<!-- 		<h1 class="title">{{title}}</h1> -->
+<!-- 	</div> -->
+<button class="button " ng-click="openPopoverFeedsFilter($event)">{{title}}</button>
+<!-- 	<h1 class="h1 title">{{title}}</h1> -->
+	<button class="button " ng-click="openPopoverDateFilter($event)" >{{filterName}}</button>
+	</ion-header-bar> <ion-content> 
+	 <ion-refresher on-refresh="doRefresh()"> </ion-refresher>
+	<div class="list">
+		<div ng-repeat="entry in entriesGoogle | filter:datePrev" class="item"
+			ng-click="browse(entry.link)">
+			<b>{{entry.title}}</b><br> <span
+				ng-bind-html="entry.contentSnippet"></span><br>
+			<div>
+				<b> {{entry.publishedDate}}</b>
+			</div>
+		</div>
+		<div ng-repeat="entryYahoo in entriesYahoo | filter:datePrev"
+			class="item" ng-click="browse(entryYahoo.link)">
+			<b>{{entryYahoo.title}}</b><br> <span
+				ng-bind-html="entryYahoo.contentSnippet"></span><br>
+			<div>
+				<b> {{entryYahoo.publishedDate}}</b>
+			</div>
+		</div>
+	</div>
+	</ion-content> </ion-pane>
+</body>
+</html>
