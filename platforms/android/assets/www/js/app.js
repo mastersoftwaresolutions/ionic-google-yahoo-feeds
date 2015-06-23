@@ -25,6 +25,9 @@ angular
 				function($http, $scope, $timeout, $ionicScrollDelegate,
 						$ionicPopover, $filter) {
 					$scope.filterName = 'All Time';
+					$scope.title = 'All feeds';
+
+					// Popover of Date Filter
 					$ionicPopover.fromTemplateUrl(
 							'templates/popoverDateFilter.html', {
 								scope : $scope
@@ -33,10 +36,10 @@ angular
 					});
 
 					$scope.openPopoverDateFilter = function($event) {
-
 						$scope.popoverDate.show($event);
 					};
 
+					// Popover of Feeds Filter
 					$ionicPopover.fromTemplateUrl(
 							'templates/popoverFeedsFilter.html', {
 								scope : $scope
@@ -45,98 +48,63 @@ angular
 					});
 
 					$scope.openPopoverFeedsFilter = function($event) {
-
 						$scope.popoverFeeds.show($event);
 					};
 
-					$scope.allFeeds = function() {
-						$http
-								.get(
-										"http://ajax.googleapis.com/ajax/services/feed/load",
-										{
-											params : {
-												"v" : "1.0",
-												"q" : "https://news.google.com/?output=rss",
-												"num" : "100"
-											}
-										})
-								.success(
-										function(data) {
-											$scope.title = 'All feeds';
-											$scope.entriesGoogle = data.responseData.feed.entries;
-											window.localStorage["entriesGoogle"] = JSON
-													.stringify(data.responseData.feed.entries);
-											window.localStorage["titleGoogle"] = JSON
-													.stringify(data.responseData.feed.title);
-										})
-								.error(
-										function(data) {
-											console.log("ERROR: " + data);
-											if (window.localStorage["entriesGoogle"] !== undefined
-													&& window.localStorage["titleGoogle"] !== undefined) {
-												$scope.entriesGoogle = JSON
-														.parse(window.localStorage["entriesGoogle"]);
-
-											}
-										});
-
-						$http
-								.get(
-										"http://ajax.googleapis.com/ajax/services/feed/load",
-										{
-											params : {
-												"v" : "1.0",
-												"q" : "http://news.yahoo.com/rss/entertainment",
-												"num" : "100"
-											}
-										})
-								.success(
-										function(data) {
-											$scope.entriesYahoo = data.responseData.feed.entries;
-											window.localStorage["entriesYahoo"] = JSON
-													.stringify(data.responseData.feed.entries);
-											window.localStorage["titleYahoo"] = JSON
-													.stringify(data.responseData.feed.title);
-										})
-								.error(
-										function(data) {
-											console.log("ERROR: " + data);
-											if (window.localStorage["entriesYahoo"] !== undefined
-													&& window.localStorage["titleYahoo"] !== undefined) {
-												$scope.entriesYahoo = JSON
-														.parse(window.localStorage["entriesYahoo"]);
-											}
-										});
+					// Function to call filter feeds
+					getFilterFeeds = function() {
+						if ($scope.title == 'All feeds') {
+							$scope.allFeeds();
+						} else if ($scope.title == 'Google Feeds') {
+							$scope.googlefeeds();
+						} else if ($scope.title == 'Yahoo Feeds') {
+							$scope.yahooFeeds();
+						}
 					}
 
+					// Function to show All Time feeds
 					$scope.showAll = function() {
 						$scope.filterName = 'All Time';
 						$scope.popoverDate.hide();
-						$scope.datePrev = '';
+						$scope.date = '';
+						getFilterFeeds();
 						$ionicScrollDelegate.scrollTop(true);
+
 					};
+
+					// Function to show Today's feeds
 					$scope.showTodays = function() {
 						$scope.filterName = 'Todays';
-						$scope.popoverDate.hide();
+						$scope.popoverDate.hide()
 						var currentDate = new Date();
 						var previousDate = new Date(currentDate);
 						previousDate.setDate(currentDate.getDate() - 1);
-						$scope.datePrev = $filter("date")(currentDate,
-								'dd MMM yyyy');
+						$scope.date = $filter("date")(currentDate,
+								'EEEE dd MMM yyyy');
+						getFilterFeeds();
 						$ionicScrollDelegate.scrollTop(true);
 					};
+
+					// Function to show Yesterday feeds
 					$scope.showYesterDay = function() {
 						$scope.filterName = 'YesterDay';
 						$scope.popoverDate.hide();
 						var currentDate = new Date();
 						var previousDate = new Date(currentDate);
 						previousDate.setDate(currentDate.getDate() - 1);
-						$scope.datePrev = $filter("date")(previousDate,
-								'dd MMM yyyy');
+						$scope.date = $filter("date")(previousDate,
+								'EEEE dd MMM yyyy');
+						getFilterFeeds();
 						$ionicScrollDelegate.scrollTop(true);
 					};
 
-					$scope.googlefeeds = function() {
+					// Function to get Google and Yahoo feeds both
+					$scope.allFeeds = function() {
+						$scope.title = 'All feeds';
+						$scope.itemsGoogle = [];
+						$scope.itemsYahoo = [];
+						$scope.responseGoogle = [];
+						$scope.responseYahoo = [];
 						$http
 								.get(
 										"http://ajax.googleapis.com/ajax/services/feed/load",
@@ -144,37 +112,199 @@ angular
 											params : {
 												"v" : "1.0",
 												"q" : "https://news.google.com/?output=rss",
-												"num" : "100"
+												"num" : "25"
+											}
+										})
+								.success(
+										function(data) {
+											for ( var i = 0; i < data.responseData.feed.entries.length; i++) {
+												$scope.imgGoogle = 'https://ssl.gstatic.com/news-static/img/logo/en_us/news.gif';
+												$scope.itemsGoogle
+														.push({
+															'publishedDate' : $filter(
+																	'date')
+																	(
+																			new Date(
+																					data.responseData.feed.entries[i].publishedDate),
+																			"EEEE dd MMM yyyy hh:mm:ss a"),
+															'title' : data.responseData.feed.entries[i].title,
+															'contentSnippet' : data.responseData.feed.entries[i].contentSnippet,
+															'link' : data.responseData.feed.entries[i].link,
+															'img' : $scope.imgGoogle
+														});
+											}
+											$http
+													.get(
+															"http://ajax.googleapis.com/ajax/services/feed/load",
+															{
+																params : {
+																	"v" : "1.0",
+																	"q" : "http://news.yahoo.com/rss/entertainment",
+																	"num" : "25"
+																}
+															})
+													.success(
+															function(data) {
+																for ( var i = 0; i < data.responseData.feed.entries.length; i++) {
+																	$scope.imgYahoo = 'http://l.yimg.com/rz/d/yahoo_news_en-US_s_f_p_168x21_news.png';
+																	if (angular
+																			.isObject(data.responseData.feed.entries[i].mediaGroups)) {
+																		$scope.mediaGroups = data.responseData.feed.entries[i].mediaGroups;
+																		for ( var j = 0; j < $scope.mediaGroups.length; j++) {
+																			$scope.contents = $scope.mediaGroups[j].contents;
+																		}
+																		for ( var k = 0; k < $scope.contents.length; k++) {
+																			$scope.imgYahoo = $scope.contents[k].url;
+																		}
+																	}
+																	$scope.itemsYahoo
+																			.push({
+																				'publishedDate' : $filter(
+																						'date')
+																						(
+																								new Date(
+																										data.responseData.feed.entries[i].publishedDate),
+																								"EEEE dd MMM yyyy hh:mm:ss a"),
+																				'title' : data.responseData.feed.entries[i].title,
+																				'contentSnippet' : data.responseData.feed.entries[i].contentSnippet,
+																				'link' : data.responseData.feed.entries[i].link,
+																				'img' : $scope.imgYahoo
+																			});
+																}
+
+																// Filter both
+																// Google Yahoo
+																// feeds
+																if ($scope.filterName == 'YesterDay'
+																		|| $scope.filterName == 'Todays') {
+																	var todayGoogleFeeds = $filter(
+																			'filter')
+																			(
+																					$scope.itemsGoogle,
+																					$scope.date);
+																	var todayYahooFeeds = $filter(
+																			'filter')
+																			(
+																					$scope.itemsYahoo,
+																					$scope.date);
+																	if (todayGoogleFeeds.length > 0
+																			|| todayYahooFeeds.length > 0) {
+
+																		if (todayGoogleFeeds.length > 0) {
+																			$scope.responseGoogle = todayGoogleFeeds;
+																		} else {
+																			$scope.itemsGoogle = [];
+																		}
+																		if (todayYahooFeeds.length > 0) {
+																			$scope.responseYahoo = todayYahooFeeds;
+																		} else {
+																			$scope.itemsYahoo = [];
+																		}
+																	} else {
+																		$scope.responseGoogle = [];
+																		$scope.responseYahoo = [];
+																		var nodata = 'No '
+																				+ $scope.filterName
+																				+ ' Feeds Available';
+																		$scope.responseGoogle
+																				.push({
+																					"publishedDate" : '',
+																					"title" : nodata,
+																					"contentSnippet" : '',
+																					"link" : ''
+																				});
+																	}
+																} else {
+																	$scope.responseYahoo = $scope.itemsYahoo;
+																	$scope.responseGoogle = $scope.itemsGoogle;
+																}
+
+															})
+													.error(
+															function(data) {
+																console
+																		.log("ERROR: "
+																				+ data);
+															});
+										}).error(function(data) {
+									alert('Error to load feeds');
+									console.log("ERROR: " + data);
+								});
+					}
+
+					// Function to get Google Feeds
+					$scope.googlefeeds = function() {
+						$scope.itemsGoogle = [];
+						$scope.itemsYahoo = [];
+						$scope.responseGoogle = [];
+						$scope.responseYahoo = [];
+						$http
+								.get(
+										"http://ajax.googleapis.com/ajax/services/feed/load",
+										{
+											params : {
+												"v" : "1.0",
+												"q" : "https://news.google.com/?output=rss",
+												"num" : "25"
 											}
 										})
 								.success(
 										function(data) {
 											$scope.title = 'Google Feeds';
-											$scope.entriesGoogle = data.responseData.feed.entries;
-											window.localStorage["entriesGoogle"] = JSON
-													.stringify(data.responseData.feed.entries);
-											window.localStorage["titleGoogle"] = JSON
-													.stringify(data.responseData.feed.title);
-										})
-								.error(
-										function(data) {
-											console.log("ERROR: " + data);
-											if (window.localStorage["entriesGoogle"] !== undefined
-													&& window.localStorage["titleGoogle"] !== undefined) {
-												$scope.entriesGoogle = JSON
-														.parse(window.localStorage["entriesGoogle"]);
-												$scope.title = JSON
-														.parse(window.localStorage["titleGoogle"]);
-
+											for ( var i = 0; i < data.responseData.feed.entries.length; i++) {
+												$scope.imgGoogle = 'https://ssl.gstatic.com/news-static/img/logo/en_us/news.gif';
+												$scope.itemsGoogle
+														.push({
+															"publishedDate" : $filter(
+																	'date')
+																	(
+																			new Date(
+																					data.responseData.feed.entries[i].publishedDate),
+																			"EEEE dd MMM yyyy hh:mm:ss a"),
+															"title" : data.responseData.feed.entries[i].title,
+															"contentSnippet" : data.responseData.feed.entries[i].contentSnippet,
+															"link" : data.responseData.feed.entries[i].link,
+															'img' : $scope.imgGoogle
+														});
 											}
-										});
+
+											// Filter Google feeds
+											if ($scope.filterName == 'YesterDay'
+													|| $scope.filterName == 'Todays') {
+												var todayGoogleFeeds = $filter(
+														'filter')(
+														$scope.itemsGoogle,
+														$scope.date);
+												if (todayGoogleFeeds.length > 0) {
+													$scope.responseGoogle = todayGoogleFeeds;
+												} else {
+													$scope.responseGoogle = [];
+													var nodata = 'No '
+															+ $scope.filterName
+															+ ' Feeds Available';
+													$scope.responseGoogle
+															.push({
+																"publishedDate" : '',
+																"title" : nodata,
+																"contentSnippet" : '',
+																"link" : ''
+															});
+												}
+											} else {
+												$scope.responseGoogle = $scope.itemsGoogle;
+											}
+										}).error(function(data) {
+									console.log("ERROR: " + data);
+								});
 
 					}
-					$scope.browse = function(link) {
-						window.open(link, "_system", "location=yes");
-					}
 
+					// Function to get Yahoo feeds
 					$scope.yahooFeeds = function() {
+						$scope.itemsGoogle = [];
+						$scope.itemsYahoo = [];
+						$scope.responseGoogle = [];
+						$scope.responseYahoo = [];
 						$http
 								.get(
 										"http://ajax.googleapis.com/ajax/services/feed/load",
@@ -182,36 +312,100 @@ angular
 											params : {
 												"v" : "1.0",
 												"q" : "http://news.yahoo.com/rss/entertainment",
-												"num" : "100"
+												"num" : "25"
 											}
 										})
 								.success(
 										function(data) {
 											$scope.title = 'Yahoo Feeds';
-											$scope.entriesYahoo = data.responseData.feed.entries;
-											window.localStorage["entriesYahoo"] = JSON
-													.stringify(data.responseData.feed.entries);
-											window.localStorage["titleYahoo"] = JSON
-													.stringify(data.responseData.feed.title);
-										})
-								.error(
-										function(data) {
-											console.log("ERROR: " + data);
-											if (window.localStorage["entriesYahoo"] !== undefined
-													&& window.localStorage["titleYahoo"] !== undefined) {
-												$scope.entriesYahoo = JSON
-														.parse(window.localStorage["entriesYahoo"]);
-												$scope.title = JSON
-														.parse(window.localStorage["titleYahoo"]);
-
+											for ( var i = 0; i < data.responseData.feed.entries.length; i++) {
+												$scope.imgYahoo = 'http://l.yimg.com/rz/d/yahoo_news_en-US_s_f_p_168x21_news.png';
+												if (angular
+														.isObject(data.responseData.feed.entries[i].mediaGroups)) {
+													$scope.mediaGroups = data.responseData.feed.entries[i].mediaGroups;
+													for ( var j = 0; j < $scope.mediaGroups.length; j++) {
+														$scope.contents = $scope.mediaGroups[j].contents;
+													}
+													for ( var k = 0; k < $scope.contents.length; k++) {
+														$scope.imgYahoo = $scope.contents[k].url;
+													}
+												}
+												$scope.itemsYahoo
+														.push({
+															'publishedDate' : $filter(
+																	'date')
+																	(
+																			new Date(
+																					data.responseData.feed.entries[i].publishedDate),
+																			"EEEE dd MMM yyyy hh:mm:ss a"),
+															'title' : data.responseData.feed.entries[i].title,
+															'contentSnippet' : data.responseData.feed.entries[i].contentSnippet,
+															'link' : data.responseData.feed.entries[i].link,
+															'img' : $scope.imgYahoo
+														});
 											}
-										});
+
+											// Filter Yahoo feeds
+											if ($scope.filterName == 'YesterDay'
+													|| $scope.filterName == 'Todays') {
+												var todayYahooFeeds = $filter(
+														'filter')(
+														$scope.itemsYahoo,
+														$scope.date);
+												if (todayYahooFeeds.length > 0) {
+													$scope.responseYahoo = todayYahooFeeds;
+												} else {
+													$scope.responseYahoo = [];
+													var nodata = 'No '
+															+ $scope.filterName
+															+ ' Feeds Available';
+													$scope.responseYahoo.push({
+														"publishedDate" : '',
+														"title" : nodata,
+														"contentSnippet" : '',
+														"link" : ''
+													});
+												}
+											} else {
+												$scope.responseYahoo = $scope.itemsYahoo;
+											}
+
+										}).error(function(data) {
+									console.log("ERROR: " + data);
+								});
 					}
 
+					// Function to show Yahoo feeds
+					$scope.yahoo = function() {
+						$scope.popoverFeeds.hide();
+						$scope.yahooFeeds();
+						$ionicScrollDelegate.scrollTop(true);
+					}
+
+					// Function to show Google feeds
+					$scope.google = function() {
+						$scope.popoverFeeds.hide();
+						$scope.googlefeeds();
+						$ionicScrollDelegate.scrollTop(true);
+					}
+
+					// Function to show both Google and Yahoo feeds
+					$scope.all = function() {
+						$scope.popoverFeeds.hide();
+						$scope.allFeeds();
+						$ionicScrollDelegate.scrollTop(true);
+					}
+
+					// Functon to open feeds in web
+					$scope.browse = function(link) {
+						window.open(link, "_system", "location=yes");
+					}
+
+					// Function of pull to refresh
 					$scope.doRefresh = function() {
-						if ($scope.entriesYahoo == '') {
+						if ($scope.title == 'Google Feeds') {
 							$scope.googlefeeds();
-						} else if ($scope.entriesGoogle == '') {
+						} else if ($scope.title == 'Yahoo Feeds') {
 							$scope.yahooFeeds();
 						} else {
 							$scope.allFeeds();
@@ -221,24 +415,5 @@ angular
 							$scope.$broadcast('scroll.refreshComplete');
 						}, 1500);
 					}
-					$scope.yahoo = function() {
-						// $scope.datePrev = '';
-						$scope.popoverFeeds.hide();
-						$scope.entriesGoogle = '';
-						$scope.yahooFeeds();
-						$ionicScrollDelegate.scrollTop(true);
-					}
-					$scope.google = function() {
-						// $scope.datePrev = '';
-						$scope.popoverFeeds.hide();
-						$scope.entriesYahoo = '';
-						$scope.googlefeeds();
-						$ionicScrollDelegate.scrollTop(true);
-					}
-					$scope.all = function() {
-						// $scope.datePrev = '';
-						$scope.popoverFeeds.hide();
-						$scope.allFeeds();
-						$ionicScrollDelegate.scrollTop(true);
-					}
+
 				});
